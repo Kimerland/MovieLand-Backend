@@ -9,6 +9,7 @@ import { dirname } from "path";
 import { register, login } from "./src/controllers/register.js";
 import { authMiddleware, getUserData } from "./src/middleware/login.js";
 import dotenv from "dotenv";
+import { getPhotos, getPhotoByName } from "./src/controllers/photos/photos.js";
 
 dotenv.config();
 
@@ -65,6 +66,8 @@ app.post(
 app.delete("/api/avatar", authMiddleware, deleteAvatar);
 
 app.get("/api/user", authMiddleware, getUserData);
+app.get("/api/photos", getPhotos);
+app.get("/api/photos/:name", getPhotoByName);
 
 // Default route
 app.get("/", (req, res) => {
