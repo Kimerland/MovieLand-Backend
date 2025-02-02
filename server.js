@@ -10,6 +10,7 @@ import { register, login } from "./src/controllers/register.js";
 import { authMiddleware, getUserData } from "./src/middleware/login.js";
 import dotenv from "dotenv";
 import { getPhotos, getPhotoByName } from "./src/controllers/photos/photos.js";
+import { getBackgroundImage } from "./src/controllers/photos/photos.js";
 
 dotenv.config();
 
@@ -48,12 +49,6 @@ const upload = multer({
   },
 });
 
-// Simplified middleware for development
-const simpleAuthMiddleware = async (req, res, next) => {
-  req.user = { _id: req.params.userId };
-  next();
-};
-
 // Routes
 app.post("/api/register", register);
 app.post("/api/login", login);
@@ -68,6 +63,11 @@ app.delete("/api/avatar", authMiddleware, deleteAvatar);
 app.get("/api/user", authMiddleware, getUserData);
 app.get("/api/photos", getPhotos);
 app.get("/api/photos/:name", getPhotoByName);
+
+// new img
+
+app.get("/api/images/:name", getBackgroundImage);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Default route
 app.get("/", (req, res) => {
