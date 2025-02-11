@@ -33,8 +33,9 @@ export async function getUserData(req, res) {
     const user = req.user;
     res.json({
       user: {
+        username: user.username,
         email: user.email,
-        password: user.password,
+        avatar: user.avatar,
       },
     });
   } catch (error) {
