@@ -9,8 +9,13 @@ import { dirname } from "path";
 import { register, login } from "./src/controllers/register.js";
 import { authMiddleware, getUserData } from "./src/middleware/login.js";
 import dotenv from "dotenv";
-import { getPhotos, getPhotoByName } from "./src/controllers/photos/photos.js";
-import { getBackgroundImage } from "./src/controllers/photos/photos.js";
+import {
+  getPhotos,
+  getPhotoByName,
+  getBackgroundImage,
+} from "./src/controllers/photos/photos.js";
+import chatRoutes from "./src/api/chat.js";
+import fs from "fs";
 
 dotenv.config();
 
@@ -20,7 +25,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Create uploads directory if it doesn't exist
-import fs from "fs";
 const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
@@ -30,8 +34,8 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: "http://localhost:5173",
-  methods: ["GET", "POST", "DELETE"],
+  origin: ["http://localhost:5173", "http://localhost:5000"],
+  methods: ["GET", "POST", "DELETE", "OPTIONS"],
   credentials: true,
 };
 
@@ -39,6 +43,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/avatars", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Multer configuration
 const storage = multer.memoryStorage();
@@ -63,15 +68,22 @@ app.delete("/api/avatar", authMiddleware, deleteAvatar);
 app.get("/api/user", authMiddleware, getUserData);
 app.get("/api/photos", getPhotos);
 app.get("/api/photos/:name", getPhotoByName);
-
-// new img
-
 app.get("/api/images/:name", getBackgroundImage);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// Chat routes
+app.use("/api/chat", chatRoutes);
 
 // Default route
 app.get("/", (req, res) => {
   res.send("Server is running");
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res
+    .status(500)
+    .json({ error: "Something went wrong!", details: err.message });
 });
 
 // Connect to MongoDB
