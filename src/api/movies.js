@@ -6,8 +6,58 @@ dotenv.config();
 const router = express.Router();
 
 const OMDB_API_KEY = process.env.OMDB_API_KEY;
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+const YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 const OMDB_URL = "http://www.omdbapi.com/";
 
+// for id
+router.get("/info/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await axios.get(OMDB_URL, {
+      params: { apikey: OMDB_API_KEY, i: id },
+    });
+
+    if (response.data.Response === "True") {
+      res.json(response.data);
+    } else {
+      res.status(404).json({ error: "Not found" });
+    }
+  } catch (error) {
+    console.error("Error film", error.message);
+    res.status(500).json({ error: "Error server" });
+  }
+});
+
+// trailer
+router.get("/trailer", async (req, res) => {
+  try {
+    const { title } = req.query;
+    if (!title) return res.status(400).json({ error: "Name no found" });
+
+    const response = await axios.get(YOUTUBE_SEARCH_URL, {
+      params: {
+        key: YOUTUBE_API_KEY,
+        q: `${title} official trailer`,
+        part: "snippet",
+        maxResults: 1,
+        type: "video",
+      },
+    });
+
+    const videos = response.data.items;
+    if (videos.length > 0) {
+      res.json({ videoId: videos[0].id.videoId });
+    } else {
+      res.status(404).json({ error: "Trailer not found!" });
+    }
+  } catch (error) {
+    console.error("Trailer receipt error:", error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+//  random
 router.get("/random", async (req, res) => {
   try {
     console.log("/random data is success!");
@@ -36,7 +86,19 @@ router.get("/random", async (req, res) => {
       const movies = response.data.Search;
       const randomMovies = movies.sort(() => 0.5 - Math.random()).slice(0, 8);
 
-      res.json(randomMovies);
+      const detailedMovies = await Promise.all(
+        randomMovies.map(async (movie) => {
+          const detailsResponse = await axios.get(OMDB_URL, {
+            params: { apikey: OMDB_API_KEY, i: movie.imdbID },
+          });
+
+          return detailsResponse.data.Response === "True"
+            ? detailsResponse.data
+            : null;
+        })
+      );
+
+      res.json(detailedMovies.filter((movie) => movie !== null));
     } else {
       console.log("OMDb return error", response.data);
       res
@@ -44,21 +106,7 @@ router.get("/random", async (req, res) => {
         .json({ error: "Film not found", omdbResponse: response.data });
     }
   } catch (error) {
-    console.error("Error while querying OMDb:");
-    if (error.response) {
-      console.error("Error status:", error.response.status);
-      console.error("Response headers:", error.response.headers);
-      console.error("Response data:", error.response.data);
-    } else if (error.request) {
-      console.error(
-        "The request was made, but no response was received",
-        error.request
-      );
-    } else {
-      console.error("Error while setting up request", error.message);
-    }
-    console.error("Request configuration:", error.config);
-
+    console.error("Error while querying OMDb:", error.message);
     res.status(500).json({
       error: "Error retrieving data from OMDb",
       details: error.message,
