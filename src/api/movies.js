@@ -115,3 +115,49 @@ router.get("/random", async (req, res) => {
 });
 
 export default router;
+
+// all films pagination
+
+router.get("/", async (req, res) => {
+  try {
+    const { year, page = 1 } = req.query;
+
+    if (!year) return res.status(400).json({ error: "Year is required" });
+
+    console.log(`A request for movies for ${year} year, page ${page}`);
+
+    const response = await axios.get(OMDB_URL, {
+      params: {
+        apikey: OMDB_API_KEY,
+        s: "movie",
+        type: "movie",
+        y: year,
+        page: page,
+      },
+    });
+
+    if (response.data.Response !== "True" || !response.data.Search) {
+      return res
+        .status(404)
+        .json({ error: "Film not found", response: response.data });
+    }
+
+    const movies = await Promise.all(
+      response.data.Search.map(async (movie) => {
+        const detailsResponse = await axios.get(OMDB_URL, {
+          params: {
+            apikey: OMDB_API_KEY,
+            i: movie.imdbID,
+          },
+        });
+
+        return detailsResponse.data; 
+      })
+    );
+
+    res.json(movies); 
+  } catch (error) {
+    console.error("Error when requesting movies:", error.message);
+    res.status(500).json({ error: "Error server", details: error.message });
+  }
+});
