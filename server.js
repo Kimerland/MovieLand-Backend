@@ -17,6 +17,7 @@ import {
 import chatRoutes from "./src/api/chat.js";
 import fs from "fs";
 import movieRoutes from "./src/api/movies.js";
+import { updateUser } from "./src/middleware/login.js";
 
 dotenv.config();
 
@@ -36,7 +37,7 @@ const app = express();
 // CORS configuration
 const corsOptions = {
   origin: "*",
-  methods: ["GET", "POST", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -71,6 +72,10 @@ app.get("/api/user", authMiddleware, getUserData);
 app.get("/api/photos", getPhotos);
 app.get("/api/photos/:name", getPhotoByName);
 app.get("/api/images/:name", getBackgroundImage);
+
+// app put
+
+app.put("/api/user", authMiddleware, updateUser);
 
 // Chat routes
 app.use("/api/chat", chatRoutes);
