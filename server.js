@@ -2,7 +2,6 @@ import express from "express";
 import multer from "multer";
 import mongoose from "mongoose";
 import cors from "cors";
-import { uploadAvatar, deleteAvatar } from "./src/controllers/avatar.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -60,13 +59,6 @@ const upload = multer({
 // Routes
 app.post("/api/register", register);
 app.post("/api/login", login);
-app.post(
-  "/api/upload-avatar",
-  authMiddleware,
-  upload.single("avatar"),
-  uploadAvatar
-);
-app.delete("/api/avatar", authMiddleware, deleteAvatar);
 
 app.get("/api/user", authMiddleware, getUserData);
 app.get("/api/photos", getPhotos);
